@@ -1,0 +1,20 @@
+{
+  "name": "covenantlab-tdr-sensitivity",
+  "private": true,
+  "version": "1.0.0",
+  "description": "CovenantLab TDR Assumption Sensitivity Tool — Interactive underwriting gap calculator for SRLN portfolio",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.4.0"
+  }
+}
