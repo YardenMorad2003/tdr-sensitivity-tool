@@ -162,8 +162,8 @@ export default function TDRv47() {
           </div>
         )}
         <div style={{ display: "flex", gap: 24, marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-          {[{ l:"AVG TDR", v:`${avg.tdr.toFixed(0)} bps`, c:"#e0e6ed" }, { l:"AVG Π", v:avg.pi.toFixed(3), c:avg.pi<0.70?"#ef4444":"#eab308" }, { l:"MSP", v:`${msp_bps.toFixed(0)} bps`, c:"#a78bfa" }, { l:"UNDERPAID", v:avg.heavy, c:"#ef4444" }, { l:"WATCH", v:avg.mod, c:"#eab308" }, { l:"ADEQUATE", v:avg.light, c:"#22c55e" }].map(s => (
-            <div key={s.l}><div style={{ fontSize: 8, color: "#5a6b7d", letterSpacing: "0.12em", fontWeight: 700 }}>{s.l}</div><div style={{ fontSize: 15, fontWeight: 700, fontFamily: mono, color: s.c }}>{s.v}</div></div>
+          {[{ l:"AVG TDR", v:`${avg.tdr.toFixed(0)} bps`, c:"#e0e6ed", d:"Model-implied required yield" }, { l:"AVG Π", v:avg.pi.toFixed(3), c:avg.pi<0.70?"#ef4444":"#eab308", d:"Path degradation (1.0 = pristine)" }, { l:"MSP", v:`${msp_bps.toFixed(0)} bps`, c:"#a78bfa", d:"Market sentiment premium" }, { l:"UNDERPAID", v:avg.heavy, c:"#ef4444", d:"Π < 0.60" }, { l:"WATCH", v:avg.mod, c:"#eab308", d:"Π 0.60–0.75" }, { l:"ADEQUATE", v:avg.light, c:"#22c55e", d:"Π ≥ 0.75" }].map(s => (
+            <div key={s.l}><div style={{ fontSize: 8, color: "#5a6b7d", letterSpacing: "0.12em", fontWeight: 700 }}>{s.l}</div><div style={{ fontSize: 15, fontWeight: 700, fontFamily: mono, color: s.c }}>{s.v}</div><div style={{ fontSize: 7, color: "#3d4f63" }}>{s.d}</div></div>
           ))}
         </div>
       </div>
@@ -268,20 +268,26 @@ export default function TDRv47() {
 
         {/* MAIN TABLE */}
         <div style={{ flex: 1, padding: "14px 18px", overflowX: "auto", overflowY: "auto", maxHeight: "calc(100vh - 130px)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <div style={{ display: "flex", gap: 5 }}>
-              {["ALL","HEAVY","MODERATE","LIGHT"].map(f => { const ct = f==="HEAVY"?avg.heavy:f==="MODERATE"?avg.mod:f==="LIGHT"?avg.light:results.length; const lab = f==="HEAVY"?"UNDERPAID":f==="MODERATE"?"WATCH":f==="LIGHT"?"ADEQUATE":"ALL"; return (
-                <button key={f} onClick={() => setFilterStatus(f)} style={{ fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 3, cursor: "pointer", border: filterStatus===f ? "1px solid #63b3ed" : "1px solid #1c2a3a", background: filterStatus===f ? "rgba(99,179,237,0.08)" : "transparent", color: filterStatus===f ? "#63b3ed" : "#4a5568" }}>{lab} ({ct})</button>
-              ); })}
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                {["ALL","HEAVY","MODERATE","LIGHT"].map(f => { const ct = f==="HEAVY"?avg.heavy:f==="MODERATE"?avg.mod:f==="LIGHT"?avg.light:results.length; const lab = f==="HEAVY"?"UNDERPAID":f==="MODERATE"?"WATCH":f==="LIGHT"?"ADEQUATE":"ALL"; return (
+                  <button key={f} onClick={() => setFilterStatus(f)} style={{ fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 3, cursor: "pointer", border: filterStatus===f ? "1px solid #63b3ed" : "1px solid #1c2a3a", background: filterStatus===f ? "rgba(99,179,237,0.08)" : "transparent", color: filterStatus===f ? "#63b3ed" : "#4a5568" }}>{lab} ({ct})</button>
+                ); })}
+                <Tip text={<>Status is based on <strong style={{color:"#e0e6ed"}}>Π (path degradation)</strong> — how much of each borrower's covenant enforcement capacity has been consumed through exercises:<br/><br/><strong style={{color:"#22c55e"}}>ADEQUATE</strong> — Π ≥ 0.75. Covenant package mostly intact. Less than 25% of enforcement capacity consumed by borrower exercises.<br/><br/><strong style={{color:"#eab308"}}>WATCH</strong> — Π between 0.60 and 0.75. Significant exercises recorded. Covenant hand is degrading — monitor for further deterioration.<br/><br/><strong style={{color:"#ef4444"}}>UNDERPAID</strong> — Π &lt; 0.60. More than 40% of covenant value consumed. The lender's options have been materially spent. High risk of inadequate enforcement position if stress arrives.<br/><br/><em style={{color:"#4a5568"}}>Note: These thresholds (0.75, 0.60) are working assumptions — not yet empirically calibrated. Π is computed from the Borrower Exercise Log using dj degradation coefficients from the Classification Bible.</em></>} />
+              </div>
+              <span style={{ fontSize: 9, color: "#4a5568" }}>{filtered.length} borrowers · Click row for detail</span>
             </div>
-            <span style={{ fontSize: 9, color: "#4a5568" }}>{filtered.length} borrowers · Click row for detail</span>
+            <div style={{ fontSize: 8, color: "#3d4f63", lineHeight: 1.4, marginBottom: 2 }}>
+              Status based on path degradation Π: <span style={{color:"#22c55e"}}>ADEQUATE</span> (Π ≥ 0.75) · <span style={{color:"#eab308"}}>WATCH</span> (0.60–0.75) · <span style={{color:"#ef4444"}}>UNDERPAID</span> (Π &lt; 0.60). Click ? for full definitions.
+            </div>
           </div>
 
           <div style={{ borderRadius: 6, border: "1px solid #1c2a3a", overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
               <thead><tr style={{ background: "#0d1219" }}>
-                {[{key:"ticker",label:"Ticker",w:52},{key:"borrower",label:"Borrower",w:100},{key:"sector",label:"Sector",w:110},{key:"seniority",label:"Lien",w:32},{key:"lambda_base",label:"λ %",w:38},{key:"bor_am",label:"#Am",w:32},{key:"bor_pi",label:"Π",w:48},{key:"tdr",label:"TDR*",w:50},{key:"offered",label:"Offered",w:50},{key:"ug",label:"UG",w:55},{key:"ug_bar",label:"",w:80},{key:"computedStatus",label:"",w:70}].map(col => (
-                  <th key={col.key} onClick={() => col.key!=="ug_bar" && (sortKey===col.key ? setSortAsc(!sortAsc) : (setSortKey(col.key), setSortAsc(col.key==="borrower"||col.key==="ticker")))} style={{ padding: "6px 5px", textAlign: "left", fontSize: 8, fontWeight: 800, letterSpacing: "0.08em", color: "#4a5568", cursor: col.key!=="ug_bar"?"pointer":"default", width: col.w, borderBottom: "1px solid #1c2a3a", userSelect: "none" }}>{col.label} {sortKey===col.key && (sortAsc?"↑":"↓")}</th>
+                {[{key:"ticker",label:"Ticker",w:52,title:"Bloomberg ticker"},{key:"borrower",label:"Borrower",w:100,title:"Company name"},{key:"sector",label:"Sector",w:110,title:"Industry classification"},{key:"seniority",label:"Lien",w:32,title:"Seniority: 1L = Senior Secured First Lien (LGD base 35%), 2L = Second Lien (LGD base 50%)"},{key:"lambda_base",label:"λ %",w:38,title:"Per-borrower default intensity (annual %). Higher = more likely to default. Range: 2.0–4.5%"},{key:"bor_am",label:"#Am",w:32,title:"Number of amendments to the credit agreement. More amendments = more borrower exercises = lower Π"},{key:"bor_pi",label:"Π",w:48,title:"Path degradation factor (0 to 1). Starts at 1.000 at origination. Each borrower exercise multiplies by (1 − dj). Lower = more covenant value consumed"},{key:"tdr",label:"TDR*",w:50,title:"Total Discount Rate — model-implied required yield (bps). TDR* = rf + λ·LGD + MSP + Π·OAS"},{key:"offered",label:"Offered",w:50,title:"Offered spread = rf + credit spread (bps). This is what the market actually pays you"},{key:"ug",label:"UG",w:55,title:"Underwriting Gap = TDR* − Offered. Red (+) = underpaid, you need more. Green (−) = adequate, spread covers risk"},{key:"ug_bar",label:"",w:80,title:""},{key:"computedStatus",label:"",w:70,title:"Status based on Π: ADEQUATE (≥0.75) / WATCH (0.60–0.75) / UNDERPAID (<0.60)"}].map(col => (
+                  <th key={col.key} title={col.title} onClick={() => col.key!=="ug_bar" && (sortKey===col.key ? setSortAsc(!sortAsc) : (setSortKey(col.key), setSortAsc(col.key==="borrower"||col.key==="ticker")))} style={{ padding: "6px 5px", textAlign: "left", fontSize: 8, fontWeight: 800, letterSpacing: "0.08em", color: "#4a5568", cursor: col.key!=="ug_bar"?"pointer":"default", width: col.w, borderBottom: "1px solid #1c2a3a", userSelect: "none" }}>{col.label} {sortKey===col.key && (sortAsc?"↑":"↓")}</th>
                 ))}
               </tr></thead>
               <tbody>
