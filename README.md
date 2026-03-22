@@ -1,76 +1,86 @@
-# CovenantLab TDR Sensitivity Tool
+# CovenantLab TDR v4.7 Sensitivity Engine
 
-Interactive assumption sensitivity calculator for the CovenantLab Total Discount Rate (TDR) framework, applied to 22 SRLN leveraged loan borrowers.
+Interactive underwriting gap calculator for a 22-borrower SRLN leveraged loan portfolio. Built on the CovenantLab Total Discount Rate framework (CDR v1 × TDR v4.7).
 
-## What It Does
+**Live:** [https://yardenmorad2003.github.io/tdr-sensitivity-tool/](https://yardenmorad2003.github.io/tdr-sensitivity-tool/)
 
-Answers one question: **Is this loan fairly priced given its covenant quality?**
-
-The tool computes the Underwriting Gap (UG) in real time as you adjust model assumptions:
+## The Master Formula
 
 ```
-TDR = rf + λ·LGD + LS + Π·OAS
-UG  = TDR − Offered Spread
+TDR*(t) = rf(t) + λ(t)·LGD(t) + MSP(t) + Π(t)·OAS(t)
 ```
 
-- **UG < 0** → Market overcompensates the lender (good deal)
-- **UG > 0** → Lender is underpaid for the risk
+| Term | What It Prices | Provenance |
+|------|---------------|------------|
+| `rf(t)` | Time value of money | SOFR swap curve |
+| `λ(t)·LGD(t)` | Default risk | Duffie–Singleton (1999, 2003) |
+| `MSP(t)` | Market sentiment premium | Altman credit cycle; BDC P/NAV |
+| `Π(t)·OAS(t)` | Path-adjusted covenant optionality | CovenantLab original |
 
-## Adjustable Assumptions
+## What's New in v2.0 (TDR v4.7)
 
-| Parameter | What It Is | Default |
-|-----------|-----------|---------|
-| **rf** | Risk-free rate (SOFR swap curve) | 455 bps |
-| **LS** | Lender sentiment (BDC P/NAV friction) | 85 bps |
-| **LGD Base** | Loss given default (seniority baseline) | 0.35 |
-| **φ (phi)** | Covenant-recovery sensitivity | 0.30 |
-| **Zone** | Borrower credit state (SAFE → DEFAULT) | ALERT |
-| **Δr_max** | Max enforcement gain per family (CFP/EX/MT/GV/EN) | Midpoints |
+### Model Alignment
+- **MSP replaces LS** — Market Sentiment Premium with exposed formula: `MSP = β_MSP × (1 − P/NAV)`, showing P/NAV as observed input and β_MSP as working assumption
+- **Offered Spread moves with rf** — `Offered = rf + credit spread`, so changing the risk-free rate correctly shifts both sides
+- **LME zone Ψ = 1.40** — was incorrectly mapped to DISTRESS (1.25) in v1
 
-## Data
+### Per-Borrower Differentiation
+- **Per-borrower λ** — hazard rates range 2.0–4.5% across the portfolio (was flat 3.1%)
+- **Per-borrower Entelechy scores** — individual Sk for each of the 5 families per borrower
+- **Per-borrower CtrlScore** — `0.35·S_MT + 0.35·S_GV + 0.30·S_EN` computed from actual scores (was hardcoded 0.63)
+- **Seniority-driven LGD** — 1L (0.35) vs 2L (0.50) from each borrower's lien position
+- **Score-weighted zone weights** — `wk = Sk × Mk,Z / Σ` per the v4.4 clean formula
 
-- 22 public borrowers from the SPDR Blackstone Senior Loan ETF (SRLN)
-- Path degradation Π values classified from SEC EDGAR 8-K amendment filings
-- Zone weights from the Classification Bible Mk,Z matrix (v2)
+### New Analytical Views
+- **OAS three-step decomposition** — Intrinsic OAS → × Π → = Realized Π·OAS
+- **Borrower Exercise Log** — full path showing each exercise, its dj coefficient, and cumulative Π
+- **UG decomposition** — which TDR term is driving the underwriting gap for each borrower
+- **Observed vs. Working tags** — every parameter tagged by calibration status
 
-## Framework
+### UX Improvements
+- Status labels renamed: HEAVY → UNDERPAID, LIGHT → ADEQUATE
+- Lien and λ columns added to portfolio table
+- Full CtrlScore/LGD chain visible in detail panel
 
-Built on:
-- **CDR v1** — Covenant Discount Rate Working Map (legal taxonomy)
-- **TDR v4.6** — Total Discount Rate Methodology Bible (pricing model)
-- **Classification Bible v2** — Option family architecture and path degradation
+## Architecture
 
-## Tech Stack
+```
+src/
+  data.js    — All model data, constants, and computation logic
+  App.jsx    — UI components and layout
+  main.jsx   — React entry point
+  index.css  — Global styles
+```
 
-- React 18 + Vite 5
-- Zero dependencies beyond React
-- Deployed to GitHub Pages via Actions
+The computation layer (`data.js`) is fully separated from the UI layer (`App.jsx`). The `computeTDR()` function implements the complete v4.7 formula and returns all intermediate values for decomposition display.
 
-## Local Development
+## Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Deploy
+Deploys to GitHub Pages via `.github/workflows/deploy.yml` on push to `main`.
 
-Push to `main` — GitHub Actions builds and deploys to Pages automatically.
+## Parameter Status
 
-Or build manually:
+| Parameter | Value | Status | Calibration Target |
+|-----------|-------|--------|-------------------|
+| `rf` | SOFR swap | OBSERVED | Bloomberg daily |
+| `P/NAV` | BDC Index | OBSERVED | Cliffwater quarterly |
+| `β_MSP` | 1.50 | WORKING | Cliffwater regression Q3 2026 |
+| `φ` | 0.30 | WORKING | Covenant Review LME regression |
+| `Δr_max` | Family ranges | WORKING | LSTA/LCD matched-pair OAS |
+| `λ` | Per-borrower | WORKING | Kamakura KRIS trial Q2 2026 |
+| `dj` | Exercise coefficients | RESEARCH | Covenant Review exercise sequences |
 
-```bash
-npm run build
-# Output in dist/
-```
+## References
 
-## Configuration
-
-To change the GitHub Pages base path (e.g., if your repo is named differently):
-
-1. Edit `vite.config.js` → change `base: '/your-repo-name/'`
-2. Push to main
+- CovenantLab TDR Methodology Bible v4.7 (March 2026)
+- Covenant Classification Bible v2 — CDR v1 × TDR v4.7
+- CDR Covenant Working Map v1
 
 ---
 
-**CovenantLab Analytics** | CDR v1 × TDR v4.6 | March 2026 | Confidential
+CovenantLab Analytics · Confidential — For Research and Advisory Use Only

@@ -1,8 +1,8 @@
 {
   "name": "covenantlab-tdr-sensitivity",
   "private": true,
-  "version": "1.0.0",
-  "description": "CovenantLab TDR Assumption Sensitivity Tool — Interactive underwriting gap calculator for SRLN portfolio",
+  "version": "2.0.0",
+  "description": "CovenantLab TDR v4.7 Sensitivity Engine — Interactive underwriting gap calculator for SRLN portfolio with per-borrower λ, Entelechy scores, MSP, and exercise log tracking",
   "type": "module",
   "scripts": {
     "dev": "vite",
